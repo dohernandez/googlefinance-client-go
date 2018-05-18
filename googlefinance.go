@@ -1,4 +1,4 @@
-package googlefinance
+package mm
 
 import (
 	"context"
@@ -32,13 +32,18 @@ type Price struct {
 
 func decodeBody(resp *http.Response, query *Query) ([]Price, error) {
 	defer resp.Body.Close()
+
 	r := csv.NewReader(resp.Body)
+
 	var a, d int64
 	var date time.Time
-	interval, _ := strconv.ParseInt(query.I, 10, 64)
 	prices := make([]Price, 0)
+
+	interval, _ := strconv.ParseInt(query.I, 10, 64)
+
 	for i := 1; ; i++ {
 		row, err := r.Read()
+
 		if err == io.EOF {
 			break
 		} else if perr, ok := err.(*csv.ParseError); ok && perr.Err == csv.ErrFieldCount {
@@ -46,16 +51,16 @@ func decodeBody(resp *http.Response, query *Query) ([]Price, error) {
 			return nil, err
 		}
 
-		if i >= 7 {
+		if i >= 8 {
 			if row[0][0:1] == "a" {
 				d, _ = strconv.ParseInt(row[0][1:], 10, 64)
 				a = d
 				date = time.Unix(a, 0)
 			} else {
-
 				d, _ = strconv.ParseInt(row[0], 10, 64)
 				date = time.Unix(a+(d*interval), 0)
 			}
+
 			close, _ := strconv.ParseFloat(row[1], 64)
 			high, _ := strconv.ParseFloat(row[2], 64)
 			low, _ := strconv.ParseFloat(row[3], 64)
@@ -68,7 +73,8 @@ func decodeBody(resp *http.Response, query *Query) ([]Price, error) {
 				High:   high,
 				Low:    low,
 				Open:   open,
-				Volume: volume})
+				Volume: volume,
+			})
 		}
 	}
 	return prices, nil
